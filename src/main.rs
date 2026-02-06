@@ -66,8 +66,9 @@ fn main() -> Result<(), String> {
         } else {
             frame as f64 / (total_frames - 1) as f64
         };
-        let center = path_position(&path, t);
+        let path_center = path_position(&path, t);
         let zoom = exp_lerp(args.zoom_start, args.zoom_end, t);
+        let center = dampened_center(path[0], path_center, zoom, args.zoom_start);
         let img = render_frame(
             args.width,
             args.height,
@@ -181,6 +182,18 @@ fn exp_lerp(a: f64, b: f64, t: f64) -> f64 {
         return a + (b - a) * t;
     }
     a * (b / a).powf(t)
+}
+
+fn dampened_center(base: Complex, target: Complex, zoom: f64, zoom_start: f64) -> Complex {
+    let ratio = if zoom_start > 0.0 {
+        (zoom / zoom_start).clamp(0.0, 1.0)
+    } else {
+        1.0
+    };
+    Complex {
+        re: base.re + (target.re - base.re) * ratio,
+        im: base.im + (target.im - base.im) * ratio,
+    }
 }
 
 fn fixed_path() -> Vec<Complex> {
